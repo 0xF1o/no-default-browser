@@ -30,6 +30,9 @@ class MainActivity : AppCompatActivity() {
             url = null
         }
 
+        // Debug log for intent details
+        Log.d("BrowserPicker", "Action: $action, URI: $uri")
+
         // Setup RecyclerView
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -39,7 +42,13 @@ class MainActivity : AppCompatActivity() {
         Log.d("BrowserPicker", "Found ${browsers.size} browsers")
 
         if (browsers.isEmpty()) {
-            Toast.makeText(this, "No browsers installed! Try installing a browser.", Toast.LENGTH_LONG).show()
+            // Try to provide more helpful information
+            val msg = if (url == null) {
+                "No browsers installed! Try installing a browser."
+            } else {
+                "No browsers found to open this URL. Please install a browser."
+            }
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
             finish()
             return
         }
@@ -50,8 +59,8 @@ class MainActivity : AppCompatActivity() {
         }
         recyclerView.adapter = adapter
 
-        // Auto-launch if only one browser
-        if (browsers.size == 1) {
+        // Auto-launch if only one browser and we have a URL
+        if (browsers.size == 1 && url != null) {
             launchBrowser(browsers[0])
         }
     }
@@ -67,24 +76,22 @@ class MainActivity : AppCompatActivity() {
 
         Log.d("BrowserPicker", "Attempting to find browsers...")
 
-        // Query with different category+scheme combos so we catch all browsers.
-        // Some browsers declare BROWSABLE, some declare DEFAULT, some both.
-        val queries = listOf(
+        // Try multiple approaches to find browsers
+        val intentsToTry = listOf(
+            Intent(Intent.ACTION_VIEW, android.net.Uri.parse("http://example.com")),
+            Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://example.com")),
             Intent(Intent.ACTION_VIEW).apply {
                 addCategory(Intent.CATEGORY_BROWSABLE)
-                data = android.net.Uri.parse("https://example.com")
+                data = android.net.Uri.parse("http://example.com")
             },
             Intent(Intent.ACTION_VIEW).apply {
                 addCategory(Intent.CATEGORY_DEFAULT)
-                data = android.net.Uri.parse("https://example.com")
-            },
-            Intent(Intent.ACTION_VIEW).apply {
                 data = android.net.Uri.parse("http://example.com")
             }
         )
-
-        for (queryIntent in queries) {
-            val resolveInfos = pm.queryIntentActivities(queryIntent, PackageManager.MATCH_ALL)
+        
+        for (intent in intentsToTry) {
+            val resolveInfos = pm.queryIntentActivities(intent, PackageManager.MATCH_ALL)
             for (ri in resolveInfos) {
                 val pkg = ri.activityInfo.packageName
                 if (pkg == "com.example.browserpicker") continue
@@ -92,6 +99,21 @@ class MainActivity : AppCompatActivity() {
                 if (handledPackages.add(pkg)) {
                     browsers.add(BrowserInfo.fromPackageManager(pm, ri))
                 }
+            }
+        }
+
+        // Also look for apps that have the BROWSABLE category explicitly
+        val browsableIntent = Intent(Intent.ACTION_VIEW)
+        browsableIntent.addCategory(Intent.CATEGORY_BROWSABLE)
+        browsableIntent.data = android.net.Uri.parse("http://example.com")
+        
+        val resolveInfos2 = pm.queryIntentActivities(browsableIntent, PackageManager.MATCH_ALL)
+        for (ri in resolveInfos2) {
+            val pkg = ri.activityInfo.packageName
+            if (pkg == "com.example.browserpicker") continue
+            if (pkg.startsWith("android.")) continue
+            if (handledPackages.add(pkg)) {
+                browsers.add(BrowserInfo.fromPackageManager(pm, ri))
             }
         }
 
