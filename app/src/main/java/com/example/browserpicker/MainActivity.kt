@@ -67,78 +67,6 @@ class MainActivity : AppCompatActivity() {
 
         Log.d("BrowserPicker", "Attempting to find browsers...")
 
-        // Try multiple different approaches to detect browsers
-        val queries = listOf(
-            Intent(Intent.ACTION_VIEW).apply {
-                data = android.net.Uri.parse("https://example.com")
-                addCategory(Intent.CATEGORY_BROWSABLE)
-            },
-            Intent(Intent.ACTION_VIEW).apply {
-                data = android.net.Uri.parse("http://example.com")
-                addCategory(Intent.CATEGORY_BROWSABLE)
-            },
-            Intent(Intent.ACTION_VIEW).apply {
-                data = android.net.Uri.parse("https://example.com")
-                addCategory(Intent.CATEGORY_DEFAULT)
-            },
-            Intent(Intent.ACTION_VIEW).apply {
-                data = android.net.Uri.parse("http://example.com")
-                addCategory(Intent.CATEGORY_DEFAULT)
-            }
-        )
-
-        for (intent in queries) {
-            val resolveInfos = pm.queryIntentActivities(intent, PackageManager.MATCH_ALL)
-            Log.d("BrowserPicker", "Query found ${resolveInfos.size} resolve infos")
-            
-            for (ri in resolveInfos) {
-                val pkg = ri.activityInfo.packageName
-                Log.d("BrowserPicker", "Found browser package: $pkg")
-                // Skip our own app and system components
-                if (pkg == "com.example.browserpicker") continue
-                if (pkg.startsWith("android.")) continue
-                
-                if (handledPackages.add(pkg)) {
-                    browsers.add(BrowserInfo.fromPackageManager(pm, ri))
-                    Log.d("BrowserPicker", "Added browser: ${ri.loadLabel(pm)}")
-                }
-            }
-        }
-
-        // If still no browsers found, try to find any app that handles URLs
-        if (browsers.isEmpty()) {
-            Log.d("BrowserPicker", "No browsers found, trying to find apps that handle URLs")
-            val allIntent = Intent(Intent.ACTION_VIEW)
-            allIntent.data = android.net.Uri.parse("http://example.com")
-            
-            val allResolveInfos = pm.queryIntentActivities(allIntent, PackageManager.MATCH_ALL)
-            for (ri in allResolveInfos) {
-                val pkg = ri.activityInfo.packageName
-                // Filter out our own app, system apps, and apps that are not browsers
-                if (pkg == "com.example.browserpicker") continue
-                if (pkg.startsWith("android.")) continue
-                
-                // Check if this app actually has a BROWSABLE category
-                val checkIntent = Intent(Intent.ACTION_VIEW)
-                checkIntent.data = android.net.Uri.parse("https://example.com")
-                checkIntent.addCategory(Intent.CATEGORY_BROWSABLE)
-                
-                if (pm.queryIntentActivities(checkIntent, PackageManager.MATCH_ALL).isNotEmpty()) {
-                    if (handledPackages.add(pkg)) {
-                        browsers.add(BrowserInfo.fromPackageManager(pm, ri))
-                        Log.d("BrowserPicker", "Added browser (fallback): ${ri.loadLabel(pm)}")
-                    }
-                }
-            }
-        }
-
-        Log.d("BrowserPicker", "Final count: ${browsers.size} browsers")
-        return browsers
-    }
-        val browsers = mutableListOf<BrowserInfo>()
-        val pm = packageManager
-        val handledPackages = mutableSetOf<String>()
-
         // Query with different category+scheme combos so we catch all browsers.
         // Some browsers declare BROWSABLE, some declare DEFAULT, some both.
         val queries = listOf(
@@ -167,6 +95,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        Log.d("BrowserPicker", "Final count: ${browsers.size} browsers")
         return browsers
     }
 

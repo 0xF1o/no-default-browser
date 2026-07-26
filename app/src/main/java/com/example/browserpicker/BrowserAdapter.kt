@@ -16,13 +16,13 @@ class BrowserAdapter(
 ) : RecyclerView.Adapter<BrowserAdapter.BrowserViewHolder>() {
 
     inner class BrowserViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val icon: ImageView = view.findViewById(android.R.id.icon)
-        val name: TextView = view.findViewById(android.R.id.text1)
+        val icon: ImageView = view.findViewById(R.id.browser_icon)
+        val name: TextView = view.findViewById(R.id.browser_name)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BrowserViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(android.R.layout.simple_list_item_2, parent, false)
+            .inflate(R.layout.browser_item, parent, false)
         return BrowserViewHolder(view)
     }
 
