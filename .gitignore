@@ -1,0 +1,19 @@
+# Generated build outputs
+apk/*.apk
+apk/*.tar
+apk/baselineProfiles/
+apk/output-metadata.json
+app/build/
+
+# Gradle cache
+.gradle/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
