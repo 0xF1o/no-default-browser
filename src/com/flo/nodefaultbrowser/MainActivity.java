@@ -3,6 +3,8 @@ package com.flo.nodefaultbrowser;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -11,6 +13,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,6 +32,8 @@ public class MainActivity extends Activity {
 
     private static final String HTML = "text/html";
     private static final String[] SCHEMES = { "http", "https" };
+    private static final Object COPY = new Object();
+    private static final int COLLAPSED = 2;
 
     private String url;
     private final StringBuilder probes = new StringBuilder();
@@ -41,8 +46,22 @@ public class MainActivity extends Activity {
         Intent intent = getIntent();
         url = Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null ? intent.getData().toString() : null;
 
-        TextView header = findViewById(R.id.header);
-        header.setText(url == null ? getString(R.string.no_url) : getString(R.string.choose_browser) + "\n" + url);
+        final TextView link = findViewById(R.id.url);
+        link.setText(url == null ? getString(R.string.no_url) : url);
+        link.setMaxLines(COLLAPSED);
+        link.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                link.setMaxLines(link.getMaxLines() == COLLAPSED ? 24 : COLLAPSED);
+            }
+        });
+        link.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                if (url != null) copyUrl();
+                return url != null;
+            }
+        });
 
         List<ResolveInfo> browsers = findBrowsers();
         if (browsers.isEmpty()) {
@@ -51,15 +70,34 @@ public class MainActivity extends Activity {
         }
 
         ListView list = findViewById(R.id.browser_list);
+        if (url != null) list.addHeaderView(copyRow(), COPY, true);
         list.setAdapter(new BrowserAdapter(this, browsers));
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                launch(browsers.get(position));
+                Object picked = parent.getItemAtPosition(position);
+                if (picked == COPY) copyUrl();
+                else launch((ResolveInfo) picked);
             }
         });
 
         if (url != null && browsers.size() == 1) launch(browsers.get(0));
+    }
+
+    /**
+     * Extra row on top of the browser list, so the link can be handed to anything else.
+     */
+    private View copyRow() {
+        View row = getLayoutInflater().inflate(R.layout.browser_item, findViewById(R.id.browser_list), false);
+        ((ImageView) row.findViewById(R.id.browser_icon)).setImageResource(R.drawable.ic_copy);
+        ((TextView) row.findViewById(R.id.browser_name)).setText(R.string.copy_link);
+        return row;
+    }
+
+    private void copyUrl() {
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.app_name), url));
+        Toast.makeText(this, R.string.link_copied, Toast.LENGTH_SHORT).show();
     }
 
     /**

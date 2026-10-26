@@ -1,7 +1,8 @@
 # No Default Browser
 
 Tiny Android app that picks a browser per link, so you never have to set a default browser.
-Tap a link in any app, choose "No Default Browser", then choose which browser opens it.
+Tap a link in any app, choose "No Default Browser", then choose which browser opens it — or
+copy the link instead. The link itself is truncated to two lines; tap it to expand, long-press to copy.
 
 ## How it works
 
@@ -45,7 +46,7 @@ compiler, no AndroidX. Result:
 
 | | before (Gradle/AGP) | now |
 |---|---|---|
-| APK | 2.0 MB release + 5.4 MB debug, release unsigned | 17 KB, signed |
+| APK | 2.0 MB release + 5.4 MB debug, release unsigned | 21 KB, signed |
 | toolchain | ~2 GB image, re-downloaded on every build (`--no-cache`) | 471 MB image, cached layers |
 | build after a source change | minutes | ~2 s |
 
@@ -56,8 +57,8 @@ and point `ANDROID_JAR` at any `android.jar`.
 
 ```
 AndroidManifest.xml                  app + intent filters
-src/com/flo/nodefaultbrowser/        MainActivity, BrowserAdapter (~130 lines of plain Java)
-res/                                 strings, themes (light/dark), 2 layouts, launcher icon
+src/com/flo/nodefaultbrowser/        MainActivity + BrowserAdapter, plain Java, no dependencies
+res/                                 strings, themes (light/dark), 2 layouts, launcher + copy icons
 build.sh                             host entry point (docker)
 build-apk.sh                         the 5-step build, runs inside the image
 Dockerfile                           JDK + android.jar + build-tools
