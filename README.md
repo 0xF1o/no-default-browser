@@ -63,6 +63,12 @@ build-apk.sh                         the 5-step build, runs inside the image
 Dockerfile                           JDK + android.jar + build-tools
 ```
 
+## Troubleshooting
+
+If the list comes up empty the app shows what `PackageManager` answered for each probe
+(`httpBROWSABLE=n`, ...). `n=1` means only the app itself matched, which is Android's package
+visibility getting in the way; `n=0` means no installed app declares a web filter at all.
+
 ## Requirements
 
 Android 7.0 (API 24) or newer, at least one browser installed.
