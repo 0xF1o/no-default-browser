@@ -1,5 +1,5 @@
 #!/bin/sh
-# The whole build: aapt2 -> javac -> d8 -> zip -> zipalign -> apksigner
+# Inside the image: the whole build, aapt2 -> javac -> d8 -> zip -> zipalign -> apksigner
 set -eu
 
 cd "${SRC:-/src}"

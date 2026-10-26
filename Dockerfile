@@ -53,6 +53,6 @@ ENV PATH=/opt/java/openjdk/bin:/opt/android/tools:$PATH
 ENV ANDROID_JAR=/opt/android/platform/android.jar
 ENV MIN_SDK=24 TARGET_SDK=34 VERSION_CODE=1 VERSION_NAME=1.0
 
-COPY build-apk.sh /usr/local/bin/build-apk.sh
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 WORKDIR /src
-ENTRYPOINT ["/usr/local/bin/build-apk.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

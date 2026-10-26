@@ -50,7 +50,7 @@ compiler, no AndroidX. Result:
 | toolchain | ~2 GB image, re-downloaded on every build (`--no-cache`) | 471 MB image, cached layers |
 | build after a source change | minutes | ~2 s |
 
-`build-apk.sh` is the entire build. If you want to run it natively, `apt install openjdk-17-jdk`
+`entrypoint.sh` is the entire build. If you want to run it natively, `apt install openjdk-17-jdk`
 and point `ANDROID_JAR` at any `android.jar`.
 
 ## Layout
@@ -60,7 +60,7 @@ AndroidManifest.xml                  app + intent filters
 src/com/flo/nodefaultbrowser/        MainActivity + BrowserAdapter, plain Java, no dependencies
 res/                                 strings, themes (light/dark), 2 layouts, launcher + copy icons
 build.sh                             host entry point (docker)
-build-apk.sh                         the 5-step build, runs inside the image
+entrypoint.sh                        the 5-step build, runs inside the image
 Dockerfile                           JDK + android.jar + build-tools
 ```
 
