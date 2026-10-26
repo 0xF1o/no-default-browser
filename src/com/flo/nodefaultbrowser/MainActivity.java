@@ -2,6 +2,7 @@ package com.flo.nodefaultbrowser;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -20,14 +21,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * Intercepts http/https links and forwards them to a browser picked by the user,
  * so no default browser ever has to be set.
  */
 public class MainActivity extends Activity {
 
+    private static final String HTML = "text/html";
+    private static final String[] SCHEMES = { "http", "https" };
+
     private String url;
+    private final StringBuilder probes = new StringBuilder();
 
     @Override
     protected void onCreate(Bundle state) {
@@ -58,18 +62,21 @@ public class MainActivity extends Activity {
         if (url != null && browsers.size() == 1) launch(browsers.get(0));
     }
 
-    private final StringBuilder probes = new StringBuilder();
-
     /**
      * Every app that can render a web page, one entry per package, sorted by name.
+     * Browsers declare their web filters two different ways: some list only the scheme,
+     * newer ones (Chrome 14x on Android 16+) pair the scheme with a MIME type, so probe
+     * both flavours and merge. The categories vary between browsers the same way.
      */
     private List<ResolveInfo> findBrowsers() {
         PackageManager pm = getPackageManager();
         Map<String, ResolveInfo> unique = new LinkedHashMap<>();
-        for (String scheme : new String[] { "http", "https" }) {
-            collect(pm, unique, scheme + "://example.com/", Intent.CATEGORY_BROWSABLE);
-            collect(pm, unique, scheme + "://example.com/", Intent.CATEGORY_DEFAULT);
-            collect(pm, unique, scheme + "://", null);
+        for (String scheme : SCHEMES) {
+            for (String type : new String[] { null, HTML }) {
+                for (String category : new String[] { null, Intent.CATEGORY_BROWSABLE }) {
+                    collect(pm, unique, scheme + "://example.com/", category, type);
+                }
+            }
         }
         List<ResolveInfo> browsers = new ArrayList<>(unique.values());
         Collections.sort(browsers, new Comparator<ResolveInfo>() {
@@ -79,6 +86,49 @@ public class MainActivity extends Activity {
             }
         });
         return browsers;
+    }
+
+    /**
+     * One probe run, results merged into unique, count remembered for the empty-list dialog.
+     */
+    private void collect(PackageManager pm, Map<String, ResolveInfo> unique, String link, String category, String type) {
+        Uri uri = Uri.parse(link);
+        Intent probe = type == null ? new Intent(Intent.ACTION_VIEW, uri) : new Intent(Intent.ACTION_VIEW).setDataAndType(uri, type);
+        if (category != null) probe.addCategory(category);
+        List<ResolveInfo> found = pm.queryIntentActivities(probe, 0);
+        probes.append(link.split("://")[0]).append(type == null ? " any-type" : " " + type);
+        probes.append(category == null ? "" : " browsable").append(" -> ").append(found.size()).append("\n");
+        for (ResolveInfo info : found) {
+            if (info.activityInfo == null || getPackageName().equals(info.activityInfo.packageName)) continue;
+            if (!unique.containsKey(info.activityInfo.packageName)) unique.put(info.activityInfo.packageName, info);
+        }
+    }
+
+    /**
+     * Hand the URL to the chosen browser, or just open the browser if we were started from the
+     * launcher. Both intent flavours are tried because a browser that filters on a MIME type
+     * rejects the plain one and vice versa.
+     */
+    private void launch(ResolveInfo browser) {
+        String pkg = browser.activityInfo.packageName;
+        List<Intent> candidates = new ArrayList<>();
+        if (url == null) {
+            candidates.add(new Intent(Intent.ACTION_MAIN).setClassName(pkg, browser.activityInfo.name));
+        } else {
+            Uri target = Uri.parse(url);
+            candidates.add(new Intent(Intent.ACTION_VIEW, target).setPackage(pkg));
+            candidates.add(new Intent(Intent.ACTION_VIEW).setDataAndType(target, HTML).setPackage(pkg));
+        }
+        for (Intent open : candidates) {
+            try {
+                startActivity(open);
+                finish();
+                return;
+            } catch (ActivityNotFoundException missing) {
+                // try the next flavour
+            }
+        }
+        Toast.makeText(this, getString(R.string.launch_failed, browser.loadLabel(getPackageManager())), Toast.LENGTH_LONG).show();
     }
 
     /**
@@ -96,35 +146,5 @@ public class MainActivity extends Activity {
                     }
                 })
                 .show();
-    }
-
-    /**
-     * One probe run, results merged into unique, count remembered for the empty-list message.
-     */
-    private void collect(PackageManager pm, Map<String, ResolveInfo> unique, String url, String category) {
-        Intent probe = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        if (category != null) probe.addCategory(category);
-        List<ResolveInfo> found = pm.queryIntentActivities(probe, 0);
-        probes.append(url.split("://")[0]).append(category == null ? "-" : category.substring(category.lastIndexOf('.') + 1)).append("=").append(found.size()).append("\n");
-        for (ResolveInfo info : found) {
-            if (info.activityInfo == null || getPackageName().equals(info.activityInfo.packageName)) continue;
-            if (!unique.containsKey(info.activityInfo.packageName)) unique.put(info.activityInfo.packageName, info);
-        }
-    }
-
-    /**
-     * Hand the URL to the chosen browser, or just open the browser if we were started from the launcher.
-     */
-    private void launch(ResolveInfo browser) {
-        PackageManager pm = getPackageManager();
-        Intent open = url == null
-                ? new Intent(Intent.ACTION_MAIN).setClassName(browser.activityInfo.packageName, browser.activityInfo.name)
-                : new Intent(Intent.ACTION_VIEW, Uri.parse(url)).setPackage(browser.activityInfo.packageName);
-        try {
-            startActivity(open);
-            finish();
-        } catch (Exception error) {
-            Toast.makeText(this, getString(R.string.launch_failed, browser.loadLabel(pm)), Toast.LENGTH_LONG).show();
-        }
     }
 }

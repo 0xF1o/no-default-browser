@@ -65,9 +65,23 @@ Dockerfile                           JDK + android.jar + build-tools
 
 ## Troubleshooting
 
-If the list comes up empty the app shows what `PackageManager` answered for each probe
-(`httpBROWSABLE=n`, ...). `n=1` means only the app itself matched, which is Android's package
-visibility getting in the way; `n=0` means no installed app declares a web filter at all.
+If the list comes up empty the app shows what `PackageManager` answered for each of the eight
+probes (scheme × {no type, `text/html`} × {no category, `BROWSABLE`}), which is what makes a
+device quirk diagnosable instead of a dead end.
+
+The reason the probes are a cross product: browsers declare their web filters differently.
+Older builds declare `<data android:scheme="http"/>` only, while current Chrome/Brave/Edge/Firefox
+pair the scheme with a MIME type (`<data android:scheme="https" android:mimeType="text/html"/>`) —
+on Android 16+ a type-less `VIEW` intent then matches *nothing*, not even from a shell:
+
+```
+$ adb shell cmd package query-activities -a android.intent.action.VIEW -c ...BROWSABLE -d https://example.com/x
+1 activities found:  com.flo.nodefaultbrowser/.MainActivity      # only ourselves
+$ ... -t text/html -d https://example.com/x
+4 activities found:  chrome, brave, emmx, firefox
+```
+
+Same reason `launch()` tries the plain intent first and the typed one second.
 
 ## Requirements
 
