@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">No Default Browser</string>
+    <string name="choose_browser">Open this link with:</string>
+    <string name="no_browsers">No browser found. Install one first.</string>
+    <string name="no_url">Open a web link from another app and pick this one.</string>
+    <string name="launch_failed">Could not launch %1$s</string>
+</resources>

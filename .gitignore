@@ -1,20 +1,13 @@
-# Generated build outputs
-apk/*.apk
-apk/*.tar
-apk/baselineProfiles/
-apk/output-metadata.json
-app/build/
+# Build output
+apk/
+build/
 
-# Gradle cache
-.gradle/
+# Signing keys - lose these and upgrades require an uninstall
+.secrets/
 
-# IDE
+# IDE / OS
 .idea/
 *.iml
-*.ipr
-*.iws
-
-# OS
 .DS_Store
 Thumbs.db
 

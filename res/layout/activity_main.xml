@@ -2,21 +2,22 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:orientation="vertical">
 
     <TextView
+        android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:ellipsize="middle"
+        android:padding="16dp"
+        android:singleLine="true"
         android:text="@string/choose_browser"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:paddingBottom="8dp"
-        android:textColor="?android:attr/textColorPrimary" />
+        android:textAppearance="?android:attr/textAppearanceMedium" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
+    <ListView
+        android:id="@+id/browser_list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:divider="?android:attr/dividerHorizontal" />
 
 </LinearLayout>
