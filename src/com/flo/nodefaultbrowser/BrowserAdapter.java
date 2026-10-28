@@ -12,16 +12,19 @@ import android.widget.TextView;
 import java.util.List;
 
 /**
- * List of browser apps: icon + name.
+ * List of browser apps: icon + name. The browser previously picked for this
+ * domain gets a coloured background so it stands out.
  */
 class BrowserAdapter extends BaseAdapter {
 
     private final List<ResolveInfo> browsers;
     private final LayoutInflater inflater;
+    private final String remembered;
 
-    BrowserAdapter(Context context, List<ResolveInfo> browsers) {
+    BrowserAdapter(Context context, List<ResolveInfo> browsers, String remembered) {
         this.browsers = browsers;
         this.inflater = LayoutInflater.from(context);
+        this.remembered = remembered;
     }
 
     @Override
@@ -47,6 +50,7 @@ class BrowserAdapter extends BaseAdapter {
         ResolveInfo browser = browsers.get(position);
         ((ImageView) view.findViewById(R.id.browser_icon)).setImageDrawable(browser.loadIcon(pm));
         ((TextView) view.findViewById(R.id.browser_name)).setText(browser.loadLabel(pm));
+        view.setBackgroundResource(browser.activityInfo.packageName.equals(remembered) ? R.color.remembered_row : 0);
         return view;
     }
 }

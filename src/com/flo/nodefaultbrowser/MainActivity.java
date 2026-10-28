@@ -36,6 +36,8 @@ public class MainActivity extends Activity {
     private static final int COLLAPSED = 2;
 
     private String url;
+    private String domain;
+    private DomainChoices choices;
     private final StringBuilder probes = new StringBuilder();
 
     @Override
@@ -45,6 +47,8 @@ public class MainActivity extends Activity {
 
         Intent intent = getIntent();
         url = Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null ? intent.getData().toString() : null;
+        choices = new DomainChoices(this);
+        domain = url == null ? null : DomainChoices.domainOf(url);
 
         final TextView link = findViewById(R.id.url);
         link.setText(url == null ? getString(R.string.no_url) : url);
@@ -71,13 +75,13 @@ public class MainActivity extends Activity {
 
         ListView list = findViewById(R.id.browser_list);
         if (url != null) list.addHeaderView(copyRow(), COPY, true);
-        list.setAdapter(new BrowserAdapter(this, browsers));
+        list.setAdapter(new BrowserAdapter(this, browsers, domain == null ? null : choices.get(domain)));
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Object picked = parent.getItemAtPosition(position);
                 if (picked == COPY) copyUrl();
-                else launch((ResolveInfo) picked);
+                else pick((ResolveInfo) picked);
             }
         });
 
@@ -92,6 +96,14 @@ public class MainActivity extends Activity {
         ((ImageView) row.findViewById(R.id.browser_icon)).setImageResource(R.drawable.ic_copy);
         ((TextView) row.findViewById(R.id.browser_name)).setText(R.string.copy_link);
         return row;
+    }
+
+    /**
+     * Remember the pick for this domain (if the link had one) and hand the URL over.
+     */
+    private void pick(ResolveInfo browser) {
+        if (domain != null) choices.put(domain, browser.activityInfo.packageName);
+        launch(browser);
     }
 
     private void copyUrl() {

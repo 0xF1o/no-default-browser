@@ -7,6 +7,10 @@ Pick a browser for every link on Android, so you never need a default browser.
 Tap a link in any app → choose **No Default Browser** → pick the browser that should open it, or
 copy the link instead. Choose *Always* once and this app becomes the entry point for every link.
 
+The pick is remembered per domain (SharedPreferences, domain → package). Next time a link from
+that domain shows up, the browser you chose before is highlighted in the list. Links whose domain
+can't be extracted are simply not remembered.
+
 ## Build and install
 
 ```bash

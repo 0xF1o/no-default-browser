@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- A bit stronger on dark backgrounds -->
+    <color name="remembered_row">#4D5FB2E0</color>
+</resources>
