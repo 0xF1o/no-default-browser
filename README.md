@@ -2,7 +2,7 @@
 
 Pick a browser for every link on Android, so you never need a default browser.
 
-<img src="docs/screenshot.png" width="280" alt="The app listing Brave, Chrome, Edge and Firefox below a link, with a Copy link row on top">
+<img src="docs/screenshot.png" width="280" alt="The app listing Brave, Chrome, Edge and Firefox below a long example.com link, with a Copy link row on top and Firefox highlighted as the remembered pick">
 
 Tap a link in any app → choose **No Default Browser** → pick the browser that should open it, or
 copy the link instead. Choose *Always* once and this app becomes the entry point for every link.
