@@ -19,6 +19,13 @@ Tick **Clean URL** and tracking junk (`utm_*`, `fbclid`, `ref_…`) is stripped 
 copied or opened — the preview shows exactly what will be removed, painted red. The box is off by
 default and remembered per domain, just like the browser pick.
 
+**Show QR code** paints the link as a QR code — handy for getting a URL onto a TV, a console or a
+friend's phone. What gets encoded respects the Clean URL tick. The encoder (`QrCode.java`) is
+hand-written from ISO 18004 — byte mode, error correction level M, versions 1–40 (up to 2331
+characters), still zero dependencies.
+
+<img src="docs/screenshot-qr.png" width="280" alt="A QR code dialog showing the cleaned example.com link, rendered on the phone by the app itself">
+
 ## Build and install
 
 ```bash
@@ -75,7 +82,8 @@ on reboot, so a stale port just means: reopen the screen, copy the new one.
 - Browsers declare their web filters in two flavours (scheme only, or scheme + `text/html`), and
   which one they use depends on Android and browser version, so the app probes both.
 - No dependencies at all: a handful of Java files against the framework, built by six command line tools
-  (`aapt2`, `javac`, `d8`, `zip`, `zipalign`, `apksigner`) in a Docker image. 21 KB APK.
+  (`aapt2`, `javac`, `d8`, `zip`, `zipalign`, `apksigner`) in a Docker image. ~40 KB APK, ClearURLs
+  rules and a full QR encoder included.
 
 ## Credits
 

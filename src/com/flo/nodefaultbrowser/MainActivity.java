@@ -9,7 +9,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
@@ -19,6 +22,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -41,6 +45,7 @@ public class MainActivity extends Activity {
     private static final String HTML = "text/html";
     private static final String[] SCHEMES = { "http", "https" };
     private static final Object COPY = new Object();
+    private static final Object QR = new Object();
     private static final int COLLAPSED = 2;
     private static final Pattern LINK = Pattern.compile("https?://[^\\s\"'<>\\[\\]]+");
 
@@ -109,13 +114,17 @@ public class MainActivity extends Activity {
         }
 
         ListView list = findViewById(R.id.browser_list);
-        if (url != null) list.addHeaderView(copyRow(), COPY, true);
+        if (url != null) {
+            list.addHeaderView(iconRow(R.drawable.ic_copy, R.string.copy_link), COPY, true);
+            list.addHeaderView(iconRow(R.drawable.ic_qr, R.string.show_qr), QR, true);
+        }
         list.setAdapter(new BrowserAdapter(this, browsers, domain == null ? null : choices.get(domain)));
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Object picked = parent.getItemAtPosition(position);
                 if (picked == COPY) copyUrl();
+                else if (picked == QR) showQr();
                 else pick((ResolveInfo) picked);
             }
         });
@@ -141,13 +150,41 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * Extra row on top of the browser list, so the link can be handed to anything else.
+     * Extra rows on top of the browser list: hand the link to anything else, or paint it
+     * as a QR code for devices without a cable (TVs, consoles, a friend's phone).
      */
-    private View copyRow() {
+    private View iconRow(int icon, int label) {
         View row = getLayoutInflater().inflate(R.layout.browser_item, findViewById(R.id.browser_list), false);
-        ((ImageView) row.findViewById(R.id.browser_icon)).setImageResource(R.drawable.ic_copy);
-        ((TextView) row.findViewById(R.id.browser_name)).setText(R.string.copy_link);
+        ((ImageView) row.findViewById(R.id.browser_icon)).setImageResource(icon);
+        ((TextView) row.findViewById(R.id.browser_name)).setText(label);
         return row;
+    }
+
+    /**
+     * The link as QR modules painted to a bitmap: black on white with the standard four
+     * module quiet zone, scaled so the picture fills roughly three quarters of the screen.
+     */
+    private void showQr() {
+        boolean[][] modules = QrCode.encode(effectiveUrl());
+        if (modules == null) {
+            Toast.makeText(this, R.string.qr_too_long, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        int size = modules.length;
+        int scale = Math.max(4, getResources().getDisplayMetrics().widthPixels * 3 / (4 * (size + 8)));
+        Bitmap bitmap = Bitmap.createBitmap((size + 8) * scale, (size + 8) * scale, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        canvas.drawColor(Color.WHITE);
+        Paint ink = new Paint();
+        ink.setColor(Color.BLACK);
+        for (int row = 0; row < size; row++) for (int col = 0; col < size; col++) if (modules[row][col]) canvas.drawRect((col + 4f) * scale, (row + 4f) * scale, (col + 5f) * scale, (row + 5f) * scale, ink);
+        ImageView image = new ImageView(this);
+        image.setImageBitmap(bitmap);
+        int pad = (int) (20 * getResources().getDisplayMetrics().density);
+        FrameLayout frame = new FrameLayout(this);
+        frame.setPadding(pad, pad, pad, pad);
+        frame.addView(image);
+        new AlertDialog.Builder(this).setView(frame).show();
     }
 
     /**

@@ -8,4 +8,6 @@
     <string name="copy_link">Copy link</string>
     <string name="clean_url">Clean URL</string>
     <string name="link_copied">Link copied</string>
+    <string name="show_qr">Show QR code</string>
+    <string name="qr_too_long">Link too long for a QR code</string>
 </resources>
