@@ -1,6 +1,7 @@
 # No Default Browser
 
-Pick a browser for every link on Android, so you never need a default browser.
+Some Android Phones force you to pick a default browser.  
+But I want to decide based on the URL what browser to use.
 
 <img src="docs/screenshot.png" width="280" alt="The app listing Brave, Chrome, Edge and Firefox below a long example.com link, with a Copy link row on top and Firefox highlighted as the remembered pick">
 
