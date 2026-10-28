@@ -51,7 +51,7 @@ RUN apt-get update \
 ENV JAVA_HOME=/opt/java/openjdk
 ENV PATH=/opt/java/openjdk/bin:/opt/android/tools:$PATH
 ENV ANDROID_JAR=/opt/android/platform/android.jar
-ENV MIN_SDK=24 TARGET_SDK=34 VERSION_CODE=3 VERSION_NAME=2.1
+ENV MIN_SDK=24 TARGET_SDK=34 VERSION_CODE=4 VERSION_NAME=2.2
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 WORKDIR /src

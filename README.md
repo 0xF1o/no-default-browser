@@ -11,6 +11,9 @@ The pick is remembered per domain (SharedPreferences, domain → package). Next 
 that domain shows up, the browser you chose before is highlighted in the list. Links whose domain
 can't be extracted are simply not remembered.
 
+The share sheet works too: share any text with a link in it and the app picks the URL out of it,
+then behaves exactly like the tap-a-link flow (highlighted favourite, Copy link and all).
+
 ## Build and install
 
 ```bash
@@ -66,7 +69,7 @@ on reboot, so a stale port just means: reopen the screen, copy the new one.
 - Hands the link to the app you tap with `setPackage()`, so it cannot bounce back to a default.
 - Browsers declare their web filters in two flavours (scheme only, or scheme + `text/html`), and
   which one they use depends on Android and browser version, so the app probes both.
-- No dependencies at all: two Java files against the framework, built by six command line tools
+- No dependencies at all: a handful of Java files against the framework, built by six command line tools
   (`aapt2`, `javac`, `d8`, `zip`, `zipalign`, `apksigner`) in a Docker image. 21 KB APK.
 
 ## Requirements

@@ -23,6 +23,8 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Intercepts http/https links and forwards them to a browser picked by the user,
@@ -34,6 +36,7 @@ public class MainActivity extends Activity {
     private static final String[] SCHEMES = { "http", "https" };
     private static final Object COPY = new Object();
     private static final int COLLAPSED = 2;
+    private static final Pattern LINK = Pattern.compile("https?://[^\\s\"'<>\\[\\]]+");
 
     private String url;
     private String domain;
@@ -46,7 +49,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         Intent intent = getIntent();
-        url = Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null ? intent.getData().toString() : null;
+        url = linkFrom(intent);
         choices = new DomainChoices(this);
         domain = url == null ? null : DomainChoices.domainOf(url);
 
@@ -86,6 +89,23 @@ public class MainActivity extends Activity {
         });
 
         if (url != null && browsers.size() == 1) launch(browsers.get(0));
+    }
+
+    /**
+     * The link we were started with: the data of a VIEW intent, or the first URL found
+     * in the text of a SHARE (apps like Chrome share "Title https://...", sometimes with
+     * trailing punctuation we trim so the browser does not choke on it).
+     */
+    private String linkFrom(Intent intent) {
+        if (Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null) return intent.getData().toString();
+        if (!Intent.ACTION_SEND.equals(intent.getAction())) return null;
+        String text = intent.getStringExtra(Intent.EXTRA_TEXT);
+        if (text == null) return null;
+        Matcher found = LINK.matcher(text);
+        if (!found.find()) return null;
+        String link = found.group();
+        while (link.length() > 0 && ".!?,:;)".indexOf(link.charAt(link.length() - 1)) >= 0) link = link.substring(0, link.length() - 1);
+        return link;
     }
 
     /**
