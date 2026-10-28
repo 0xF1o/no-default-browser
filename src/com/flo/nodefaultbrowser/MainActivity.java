@@ -79,8 +79,15 @@ public class MainActivity extends Activity {
             }
         });
 
-        CheckBox clean = findViewById(R.id.clean);
-        clean.setVisibility(url == null ? View.GONE : View.VISIBLE);
+        final CheckBox clean = findViewById(R.id.clean);
+        View cleanRow = findViewById(R.id.clean_row);
+        cleanRow.setVisibility(url == null ? View.GONE : View.VISIBLE);
+        cleanRow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clean.toggle();
+            }
+        });
         if (url == null) link.setText(R.string.no_url);
         else {
             clean.setChecked(cleaning);

@@ -3,7 +3,7 @@
 Some Android Phones force you to pick a default browser.  
 But I want to decide based on the URL what browser to use.
 
-<img src="docs/screenshot.png" width="280" alt="The app listing Brave, Chrome, Edge and Firefox below a long example.com link, with a Copy link row on top and Firefox highlighted as the remembered pick">
+<img src="docs/screenshot.png" width="280" alt="A long example.com link with the tracking parameters painted red, a ticked Clean URL checkbox on the right, a Copy link row and Brave, Chrome, Edge and Firefox below, with Firefox highlighted as the remembered pick">
 
 Tap a link in any app → choose **No Default Browser** → pick the browser that should open it, or
 copy the link instead. Choose *Always* once and this app becomes the entry point for every link.

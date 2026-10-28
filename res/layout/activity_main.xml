@@ -29,15 +29,30 @@
         android:textColor="?android:attr/textColorSecondary"
         android:textIsSelectable="false" />
 
-    <CheckBox
-        android:id="@+id/clean"
+    <!-- Row as tall as a browser row: label left, box on the right border, whole row tappable -->
+    <FrameLayout
+        android:id="@+id/clean_row"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp"
-        android:text="@string/clean_url" />
+        android:background="?android:attr/selectableItemBackground"
+        android:minHeight="64dp"
+        android:padding="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|start"
+            android:text="@string/clean_url"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <CheckBox
+            android:id="@+id/clean"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|end"
+            android:clickable="false" />
+
+    </FrameLayout>
 
     <ListView
         android:id="@+id/browser_list"
