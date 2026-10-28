@@ -6,5 +6,6 @@
     <string name="no_url">Open a web link from another app and pick this one.</string>
     <string name="launch_failed">Could not launch %1$s</string>
     <string name="copy_link">Copy link</string>
+    <string name="clean_url">Clean URL</string>
     <string name="link_copied">Link copied</string>
 </resources>

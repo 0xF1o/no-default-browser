@@ -15,6 +15,10 @@ can't be extracted are simply not remembered.
 The share sheet works too: share any text with a link in it and the app picks the URL out of it,
 then behaves exactly like the tap-a-link flow (highlighted favourite, Copy link and all).
 
+Tick **Clean URL** and tracking junk (`utm_*`, `fbclid`, `ref_…`) is stripped before the link is
+copied or opened — the preview shows exactly what will be removed, painted red. The box is off by
+default and remembered per domain, just like the browser pick.
+
 ## Build and install
 
 ```bash
@@ -72,6 +76,12 @@ on reboot, so a stale port just means: reopen the screen, copy the new one.
   which one they use depends on Android and browser version, so the app probes both.
 - No dependencies at all: a handful of Java files against the framework, built by six command line tools
   (`aapt2`, `javac`, `d8`, `zip`, `zipalign`, `apksigner`) in a Docker image. 21 KB APK.
+
+## Credits
+
+URL cleaning uses the rules from the [ClearURLs](https://clearurls.xyz) project (LGPL-3.0),
+bundled with the app as `res/raw/clearurls_rules.json`. Only the provider `rules`,
+`referralMarketing`, `rawRules`, `urlPattern` and `exceptions` are applied; redirects are not.
 
 ## Requirements
 

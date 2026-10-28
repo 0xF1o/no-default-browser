@@ -36,4 +36,12 @@ class DomainChoices {
     void put(String domain, String packageName) {
         prefs.edit().putString(domain, packageName).apply();
     }
+
+    boolean isClean(String domain) {
+        return prefs.getBoolean("clean:" + domain, false);
+    }
+
+    void putClean(String domain, boolean on) {
+        prefs.edit().putBoolean("clean:" + domain, on).apply();
+    }
 }

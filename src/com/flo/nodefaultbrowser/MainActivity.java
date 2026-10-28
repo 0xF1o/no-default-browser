@@ -9,10 +9,16 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -41,6 +47,9 @@ public class MainActivity extends Activity {
     private String url;
     private String domain;
     private DomainChoices choices;
+    private UrlCleaner cleaner;
+    private UrlCleaner.Result result;
+    private boolean cleaning;
     private final StringBuilder probes = new StringBuilder();
 
     @Override
@@ -52,9 +61,9 @@ public class MainActivity extends Activity {
         url = linkFrom(intent);
         choices = new DomainChoices(this);
         domain = url == null ? null : DomainChoices.domainOf(url);
+        cleaning = domain != null && choices.isClean(domain);
 
         final TextView link = findViewById(R.id.url);
-        link.setText(url == null ? getString(R.string.no_url) : url);
         link.setMaxLines(COLLAPSED);
         link.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -69,6 +78,22 @@ public class MainActivity extends Activity {
                 return url != null;
             }
         });
+
+        CheckBox clean = findViewById(R.id.clean);
+        clean.setVisibility(url == null ? View.GONE : View.VISIBLE);
+        if (url == null) link.setText(R.string.no_url);
+        else {
+            clean.setChecked(cleaning);
+            clean.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton button, boolean on) {
+                    cleaning = on;
+                    if (domain != null) choices.putClean(domain, on);
+                    showUrl(link);
+                }
+            });
+            showUrl(link);
+        }
 
         List<ResolveInfo> browsers = findBrowsers();
         if (browsers.isEmpty()) {
@@ -126,9 +151,37 @@ public class MainActivity extends Activity {
         launch(browser);
     }
 
+    /**
+     * The URL text: plain, or with the parts the cleaner would drop painted red.
+     */
+    private void showUrl(TextView link) {
+        if (!cleaning || cleaned().removed.isEmpty()) {
+            link.setText(url);
+            return;
+        }
+        SpannableStringBuilder preview = new SpannableStringBuilder(url);
+        for (int[] span : cleaned().removed) preview.setSpan(new ForegroundColorSpan(Color.RED), span[0], span[1], Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        link.setText(preview);
+    }
+
+    private UrlCleaner.Result cleaned() {
+        if (result == null) {
+            if (cleaner == null) cleaner = new UrlCleaner(getResources());
+            result = cleaner.clean(url);
+        }
+        return result;
+    }
+
+    /**
+     * What we copy and launch: the cleaned link while the box is ticked.
+     */
+    private String effectiveUrl() {
+        return url == null || !cleaning ? url : cleaned().cleaned;
+    }
+
     private void copyUrl() {
         ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-        clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.app_name), url));
+        clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.app_name), effectiveUrl()));
         Toast.makeText(this, R.string.link_copied, Toast.LENGTH_SHORT).show();
     }
 
@@ -185,7 +238,7 @@ public class MainActivity extends Activity {
         if (url == null) {
             candidates.add(new Intent(Intent.ACTION_MAIN).setClassName(pkg, browser.activityInfo.name));
         } else {
-            Uri target = Uri.parse(url);
+            Uri target = Uri.parse(effectiveUrl());
             candidates.add(new Intent(Intent.ACTION_VIEW, target).setPackage(pkg));
             candidates.add(new Intent(Intent.ACTION_VIEW).setDataAndType(target, HTML).setPackage(pkg));
         }
