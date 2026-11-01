@@ -1,0 +1,9 @@
+# The build context only needs the manifest, resources, sources and the build script.
+# .secrets holds the signing key (and adb keys), apk/ and build/ the previous output.
+.git
+.secrets
+apk
+build
+docs
+*.md
+.gitignore

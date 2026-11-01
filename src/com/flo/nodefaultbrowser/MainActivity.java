@@ -188,11 +188,10 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * Remember the pick for this domain (if the link had one) and hand the URL over.
+     * Remember the pick for this domain, but only once the URL really went to that browser.
      */
     private void pick(ResolveInfo browser) {
-        if (domain != null) choices.put(domain, browser.activityInfo.packageName);
-        launch(browser);
+        if (launch(browser) && domain != null) choices.put(domain, browser.activityInfo.packageName);
     }
 
     /**
@@ -272,15 +271,16 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * Hand the URL to the chosen browser, or just open the browser if we were started from the
-     * launcher. Both intent flavours are tried because a browser that filters on a MIME type
-     * rejects the plain one and vice versa.
+     * Hand the URL to the chosen browser, or, started from the launcher, just bring the browser
+     * up through its own launcher intent. Both VIEW flavours are tried because a browser that
+     * filters on a MIME type rejects the plain one and vice versa. False if none of them started.
      */
-    private void launch(ResolveInfo browser) {
+    private boolean launch(ResolveInfo browser) {
         String pkg = browser.activityInfo.packageName;
         List<Intent> candidates = new ArrayList<>();
         if (url == null) {
-            candidates.add(new Intent(Intent.ACTION_MAIN).setClassName(pkg, browser.activityInfo.name));
+            Intent home = getPackageManager().getLaunchIntentForPackage(pkg);
+            candidates.add(home != null ? home : new Intent(Intent.ACTION_MAIN).setClassName(pkg, browser.activityInfo.name));
         } else {
             Uri target = Uri.parse(effectiveUrl());
             candidates.add(new Intent(Intent.ACTION_VIEW, target).setPackage(pkg));
@@ -290,12 +290,13 @@ public class MainActivity extends Activity {
             try {
                 startActivity(open);
                 finish();
-                return;
-            } catch (ActivityNotFoundException missing) {
+                return true;
+            } catch (ActivityNotFoundException | SecurityException refused) {
                 // try the next flavour
             }
         }
         Toast.makeText(this, getString(R.string.launch_failed, browser.loadLabel(getPackageManager())), Toast.LENGTH_LONG).show();
+        return false;
     }
 
     /**

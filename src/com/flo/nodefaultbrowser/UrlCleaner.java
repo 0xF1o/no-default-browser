@@ -1,6 +1,7 @@
 package com.flo.nodefaultbrowser;
 
 import android.content.res.Resources;
+import android.util.Log;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -21,6 +22,12 @@ import org.json.JSONObject;
  * from the original so the UI can paint them red.
  */
 class UrlCleaner {
+
+    private static final String TAG = "UrlCleaner";
+
+    // A link this long is not worth cleaning: the per-character origin map and the provider
+    // regexes would stall the UI thread, and no browser accepts such a URL anyway.
+    private static final int MAX_URL = 8192;
 
     static class Result {
         final String cleaned;
@@ -54,17 +61,25 @@ class UrlCleaner {
             JSONObject all = new JSONObject(read(in)).getJSONObject("providers");
             for (Iterator<String> names = all.keys(); names.hasNext(); ) {
                 JSONObject provider = all.getJSONObject(names.next());
-                providers.add(new Provider(pattern(provider.optString("urlPattern", "$^"), false),
+                Pattern urlPattern = pattern(provider.optString("urlPattern", "$^"), false);
+                if (urlPattern == null) {
+                    // one JS-only regex must not take the whole cleaner (and the app) down
+                    Log.w(TAG, "skipping provider without a usable urlPattern");
+                    continue;
+                }
+                providers.add(new Provider(urlPattern,
                         patterns(provider.optJSONArray("exceptions"), false),
                         patterns(provider.optJSONArray("rawRules"), false),
                         keys(provider.optJSONArray("rules"), provider.optJSONArray("referralMarketing"))));
             }
-        } catch (Exception missing) {
+        } catch (Exception broken) {
+            Log.w(TAG, "ClearURLs rules unusable, links are handed over uncleaned", broken);
             providers.clear();
         }
     }
 
     Result clean(String url) {
+        if (url.length() > MAX_URL) return new Result(url, new ArrayList<int[]>());
         StringBuilder text = new StringBuilder(url);
         List<Integer> origin = new ArrayList<>();
         for (int i = 0; i < url.length(); i++) origin.add(i);
@@ -96,7 +111,8 @@ class UrlCleaner {
     private void cut(Pattern rule, StringBuilder text, List<Integer> origin, List<int[]> removed) {
         List<int[]> hits = new ArrayList<>();
         Matcher matcher = rule.matcher(text);
-        while (matcher.find()) hits.add(new int[] { matcher.start(), matcher.end() });
+        // an empty match would cut nothing but map to an invalid span
+        while (matcher.find()) if (matcher.end() > matcher.start()) hits.add(new int[] { matcher.start(), matcher.end() });
         for (int i = hits.size() - 1; i >= 0; i--) remove(hits.get(i)[0], hits.get(i)[1], text, origin, removed);
     }
 
