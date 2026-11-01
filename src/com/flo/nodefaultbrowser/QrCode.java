@@ -27,6 +27,9 @@ class QrCode {
         {6, 32, 58, 84, 110, 136, 162}, {6, 26, 54, 82, 110, 138, 166}, {6, 30, 58, 86, 114, 142, 170},
     };
 
+    // ISO 18004 Rule 3: the 1:1:3:1:1 dark/light/dark/light/dark finder ratio.
+    private static final boolean[] RATIO = { true, false, true, true, true, false, true };
+
     private final int size;
     private final boolean[][] dark;
     private final boolean[][] function;
@@ -247,50 +250,61 @@ class QrCode {
     }
 
     /**
-     * The four standard penalty rules, straight from the spec.
+     * The four standard penalty rules: runs of five or more modules of the same
+     * colour, 2x2 blocks, the finder ratio and the dark module balance.
      */
     private int penalty(boolean[][] grid) {
         int score = 0, darkCount = 0;
         for (int i = 0; i < size; i++) {
-            int runRow = 0, runCol = 0;
+            int runRow = 1, runCol = 1;
             for (int j = 0; j < size; j++) {
                 if (grid[i][j]) darkCount++;
-                runRow = grid[i][j] ? runRow + 1 : 0;
-                runCol = grid[j][i] ? runCol + 1 : 0;
+                if (j > 0) {
+                    runRow = grid[i][j] == grid[i][j - 1] ? runRow + 1 : 1;
+                    runCol = grid[j][i] == grid[j - 1][i] ? runCol + 1 : 1;
+                }
                 if (runRow == 5) score += 3; else if (runRow > 5) score++;
                 if (runCol == 5) score += 3; else if (runCol > 5) score++;
-                if (j + 2 <= size && i + 2 <= size) {
-                    boolean a = grid[i][j];
-                    if (grid[i][j + 1] == a && grid[i + 1][j] == a && grid[i + 1][j + 1] == a) score += 3;
-                }
+                if (sameColour(grid, i, j)) score += 3;
+                score += patternPenalty(grid, i, j);
             }
-            score += patternPenalty(grid, i, true) + patternPenalty(grid, i, false);
         }
-        int percent = darkCount * 100 / (size * size);
-        score += Math.abs(percent - 50) / 5 * 10;
-        return score;
+        return score + Math.abs(2 * darkCount - size * size) * 10 / (size * size) * 10;
+    }
+
+    /** True when the 2x2 window with its top-left corner at row/col is one single colour. */
+    private boolean sameColour(boolean[][] grid, int row, int col) {
+        if (row + 1 == size || col + 1 == size) return false;
+        return grid[row][col] == grid[row][col + 1] && grid[row][col] == grid[row + 1][col] && grid[row][col] == grid[row + 1][col + 1];
     }
 
     /**
-     * Rule 3: 1:1:3:1:1 with quiet space on one side, in rows and columns.
+     * Rule 3: the 1:1:3:1:1 finder ratio, in rows and in columns, with four light
+     * modules before or after it. Every occurrence counts exactly once and the four
+     * light modules must lie inside the symbol, which is how zxing scores it as well.
      */
-    private int patternPenalty(boolean[][] grid, int line, boolean horizontal) {
+    private int patternPenalty(boolean[][] grid, int row, int col) {
         int score = 0;
-        for (int start = 0; start + 11 <= size; start++) {
-            if (matches(grid, line, start, horizontal) || matchesReverse(grid, line, start, horizontal)) score += 40;
+        for (int axis = 0; axis < 2; axis++) {
+            boolean horizontal = axis == 0;
+            int line = horizontal ? row : col, at = horizontal ? col : row;
+            if (at + RATIO.length > size || !matches(grid, line, at, horizontal)) continue;
+            if (lightRun(grid, line, at, horizontal, -1) || lightRun(grid, line, at, horizontal, 1)) score += 40;
         }
         return score;
     }
 
     private boolean matches(boolean[][] grid, int line, int start, boolean horizontal) {
-        int[] pattern = { 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0 };
-        for (int k = 0; k < 11; k++) if (gridAt(grid, line, start + k, horizontal) != (pattern[k] == 1)) return false;
+        for (int k = 0; k < RATIO.length; k++) if (gridAt(grid, line, start + k, horizontal) != RATIO[k]) return false;
         return true;
     }
 
-    private boolean matchesReverse(boolean[][] grid, int line, int start, boolean horizontal) {
-        int[] pattern = { 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1 };
-        for (int k = 0; k < 11; k++) if (gridAt(grid, line, start + k, horizontal) != (pattern[k] == 1)) return false;
+    /** Four light modules in front of (-1) or behind (+1) a finder ratio pattern. */
+    private boolean lightRun(boolean[][] grid, int line, int start, boolean horizontal, int direction) {
+        for (int k = 1; k <= 4; k++) {
+            int at = start + direction * (k + (direction > 0 ? RATIO.length - 1 : 0));
+            if (at < 0 || at >= size || gridAt(grid, line, at, horizontal)) return false;
+        }
         return true;
     }
 
